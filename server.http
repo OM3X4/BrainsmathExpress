@@ -1,0 +1,15 @@
+POST http://127.0.0.1:8000/test
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im9tYXJAZ21haWwuY29tIiwidXNlcm5hbWUiOiJvbWFyIiwiaWF0IjoxNzQ3NjI3ODEwLCJleHAiOjE3NDc2MzUwMTB9.AQsemwfRQ4ZPU_2BZmLeAwJ12QYqU_qyqpwETlBHLGY
+
+{
+  "test": {
+    "qpm": 121,
+    "raw": 130,
+    "accuracy": 95,
+    "mode": "time",
+    "difficulty": 3,
+    "number": 60,
+    "time": 60
+  }
+}
