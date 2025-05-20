@@ -1,19 +1,31 @@
 import { PrismaClient } from '@prisma/client'
 import express, { Request, Response, NextFunction } from 'express'
+import bigIntReplacer from '../utils/BigIntReplacer'
+import isToday from '../utils/isToday'
+import daysFromToday from '../utils/daysFromToday'
+
 
 const prisma = new PrismaClient()
 
-BigInt.prototype.toJSON = function() {
-  return this.toString();
-};
 
 export async function GetUserData(req: Request, res: Response) {
     const user = await prisma.auth_user.findFirst({
         where: {
-            username: req.body.user.username
+            username: (req as any).user.username
         },
-        include: {
-            core_settings: true,
+        select: {
+            id: true,
+            username: true,
+            email: true,
+            date_joined: true,
+            core_settings: true, // returns all fields of core_settings relation
+            longest_streak: true,
+            current_streak: true,
+            _count: {
+                select: {
+                    core_test: true
+                }
+            },
             core_test: {
                 select: {
                     id: true,
@@ -30,9 +42,12 @@ export async function GetUserData(req: Request, res: Response) {
                     qpm: 'desc'
                 },
                 take: 10
-            }
+            },
+
         }
     })
+
+
     if (user) {
         res.status(200).json(user);
         return;
@@ -43,24 +58,24 @@ export async function GetUserData(req: Request, res: Response) {
 export async function PutUserData(req: Request, res: Response) {
     try {
         const user = await prisma.auth_user.update({
-            where: { username: req.body.user.username },
+            where: { username: (req as any).user.username },
             data: {
                 core_settings: {
                     update: {
-                        theme: req.body.settings.theme,
-                        font: req.body.settings.font
+                        theme: req.body.theme,
+                        font: req.body.font
                     }
                 }
             }
         })
 
         if (user) {
-            res.status(200).json(user);
+            res.status(200).json({ message: "success" });
             return;
         }
         res.status(404).json({ message: "User Not Found" })
-    } catch {
-        res.status(500).json({ message: "Internal Server Error" });
+    } catch (err) {
+        res.status(500).json({ message: "internal server error" });
     }
 }
 
@@ -112,17 +127,62 @@ export async function SubmitTest(req: Request, res: Response) {
             data: {
                 core_test: {
                     create: {
-                        qpm: req.body.test.qpm,
-                        raw: req.body.test.raw,
-                        accuracy: req.body.test.accuracy,
-                        mode: req.body.test.mode,
-                        difficulty: req.body.test.difficulty,
-                        number: req.body.test.number,
-                        time: req.body.test.time
+                        qpm: req.body.qpm,
+                        raw: req.body.raw,
+                        accuracy: req.body.accuracy,
+                        mode: req.body.mode,
+                        difficulty: req.body.difficulty,
+                        number: req.body.number,
+                        time: req.body.time
                     }
+                }
+            },
+            include: {
+                core_test: {
+                    orderBy: { creation: "desc" }
                 }
             }
         })
+
+
+
+        if (user.core_test.length == 1) {
+            console.log(1)
+            await prisma.auth_user.update({
+                where: {
+                    username: (req as any).user.username
+                },
+                data: {
+                    current_streak: 1,
+                    longest_streak: 1
+                }
+            })
+        }
+        else if (daysFromToday(user.core_test[1].creation.toISOString()) > 1) {
+            console.log(2)
+            await prisma.auth_user.update({
+                where: {
+                    username: (req as any).user.username
+                },
+                data: {
+                    current_streak: 1,
+                    longest_streak: 1
+                }
+            })
+        }
+        else if (!isToday(user.core_test[1].creation.toISOString())) {
+            console.log(3)
+            await prisma.auth_user.update({
+                where: {
+                    username: (req as any).user.username
+                },
+                data: {
+                    current_streak: { increment: 1 },
+                    longest_streak: Math.max(user.current_streak + 1, user.longest_streak)
+                }
+            })
+        }
+
 
 
         if (user) {
@@ -132,13 +192,15 @@ export async function SubmitTest(req: Request, res: Response) {
         res.status(404).json({ message: "User Not Found" })
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: error });
+        res.status(500).json({ message: "Internal Server Error" });
     }
 }
 
 export async function UserRank(req: Request, res: Response) {
     try {
-        console.log("hi")
+
+        const username = req.query.user
+
         const userRank = await prisma.$queryRaw`
             WITH result as (
             SELECT
@@ -163,23 +225,22 @@ export async function UserRank(req: Request, res: Response) {
                 )
             ORDER BY t.qpm DESC)
             SELECT * FROM result
-            WHERE username = ${(req as any).user.username}
+            WHERE username = ${username}
         `
 
 
 
         if (userRank) {
 
-            (userRank as any)[0].index = Number((userRank as any).index);
+            let jsonData = JSON.stringify(userRank, bigIntReplacer)
+            jsonData = JSON.parse(jsonData)
 
-            console.log((userRank as any)[0])
-
-            res.status(200).json(userRank);
+            res.status(200).json(jsonData);
             return
         }
         res.status(404).json({ message: "User Not Found" })
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: error });
+        res.status(500).json({ message: "Internal Server Error" });
     }
 }

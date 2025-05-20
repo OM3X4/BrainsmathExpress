@@ -22,6 +22,8 @@ model auth_user {
   refreshToken               String?
   core_settings              core_settings?               @relation("UserSettings")
   core_test                  core_test[]
+  longest_streak             Int                          @default(0)
+  current_streak             Int                          @default(0)
 }
 
 model core_settings {

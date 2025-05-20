@@ -10,7 +10,7 @@ router.put("/user" , authenticateToken , PutUserData)
 
 router.get("/leaderboard" , Leaderboard)
 router.post("/test" , authenticateToken , SubmitTest)
-router.get("/userrank" , authenticateToken , UserRank)
+router.get("/userrank"  , UserRank)
 
 
 
