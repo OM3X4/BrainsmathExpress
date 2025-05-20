@@ -1,6 +1,6 @@
 import { Request , Response , NextFunction } from "express"
 import jwt from 'jsonwebtoken'
-const JWT_SECRET = "1234";
+const JWT_SECRET = process.env.JWT_SECRET
 
 
 export default function authenticateToken(req: Request , res:Response , next: NextFunction) : void{
@@ -13,7 +13,7 @@ export default function authenticateToken(req: Request , res:Response , next: Ne
             return;
         }
 
-        jwt.verify(token , JWT_SECRET , (err , user) => {
+        jwt.verify(token , (JWT_SECRET as any) , (err: any , user: any) => {
             if (err) return res.status(401).json({message: "Invalid Token"});
             (req as any).user = user;
             next();

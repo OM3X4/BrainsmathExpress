@@ -5,7 +5,8 @@ import jwt from "jsonwebtoken";
 import { JWT_EXP, JWT_REFRESH_EXP } from '../Config/Config';
 
 const prisma = new PrismaClient()
-const JWT_SECRET = "1234";
+// const JWT_SECRET = "1234";
+const JWT_SECRET = process.env.JWT_SECRET
 
 
 
@@ -37,12 +38,12 @@ export async function Register(req: Request, res: Response) {
 
         const access = jwt.sign(
             { email: user.email, username: user.username },
-            JWT_SECRET,
+            (JWT_SECRET as any),
             { expiresIn: JWT_EXP }
         )
         const refresh = jwt.sign(
             { email: user.email, username: user.username },
-            JWT_SECRET,
+            (JWT_SECRET as any),
             { expiresIn: JWT_REFRESH_EXP }
         )
 
@@ -64,6 +65,7 @@ export async function Register(req: Request, res: Response) {
 }
 
 export async function Login(req: Request, res: Response) {
+    console.log(JWT_SECRET)
     const username = req.body.username
     const password = req.body.password
 
@@ -94,13 +96,13 @@ export async function Login(req: Request, res: Response) {
 
         const access = jwt.sign(
             { email: user.email, username: user.username },
-            JWT_SECRET,
+            (JWT_SECRET as any),
             { expiresIn: JWT_EXP }
         )
 
         const refresh = jwt.sign(
             { email: user.email, username: user.username },
-            JWT_SECRET,
+            (JWT_SECRET as any),
             { expiresIn: JWT_REFRESH_EXP }
         )
 
@@ -125,7 +127,7 @@ export async function RefreshToken(req: Request, res: Response) {
         return;
     }
 
-    jwt.verify(token, JWT_SECRET, (err: any) => {
+    jwt.verify(token, (JWT_SECRET as any), (err: any) => {
         if (err) {
             res.status(400).json({ message: "Invalid Refresh Token" })
             return;
@@ -145,10 +147,8 @@ export async function RefreshToken(req: Request, res: Response) {
 
     const access = jwt.sign(
         { email: user.email, username: user.username },
-        JWT_SECRET,
+        (JWT_SECRET as any),
         { expiresIn: JWT_EXP }
     )
     res.status(200).json({ access })
-
-
 }
