@@ -147,7 +147,6 @@ export async function SubmitTest(req: Request, res: Response) {
 
 
         if (user.core_test.length == 1) {
-            console.log(1)
             await prisma.auth_user.update({
                 where: {
                     username: (req as any).user.username
@@ -159,7 +158,6 @@ export async function SubmitTest(req: Request, res: Response) {
             })
         }
         else if (daysFromToday(user.core_test[1].creation.toISOString()) > 1) {
-            console.log(2)
             await prisma.auth_user.update({
                 where: {
                     username: (req as any).user.username
@@ -171,7 +169,6 @@ export async function SubmitTest(req: Request, res: Response) {
             })
         }
         else if (!isToday(user.core_test[1].creation.toISOString())) {
-            console.log(3)
             await prisma.auth_user.update({
                 where: {
                     username: (req as any).user.username
@@ -215,7 +212,7 @@ export async function UserRank(req: Request, res: Response) {
                 t.time,
                 t.user_id,
                 u.username,
-                CAST(ROW_NUMBER() OVER (ORDER BY t.qpm DESC) AS INTEGER) AS \`index\`
+                CAST(ROW_NUMBER() OVER (ORDER BY t.qpm DESC) AS INTEGER) AS "index"
                 FROM core_test t
                 JOIN auth_user u ON t.user_id = u.id
                 WHERE t.qpm = (

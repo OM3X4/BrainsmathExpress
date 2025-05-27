@@ -16,7 +16,6 @@ export async function Register(req: Request, res: Response) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     try {
-        console.log("hi")
 
         const user = await prisma.auth_user.create({
             data: {
@@ -26,7 +25,6 @@ export async function Register(req: Request, res: Response) {
                 date_joined: new Date(),
             }
         });
-        console.log("Created user with ID:", user.id);
 
         await prisma.core_settings.create({
             data: {
@@ -65,7 +63,6 @@ export async function Register(req: Request, res: Response) {
 }
 
 export async function Login(req: Request, res: Response) {
-    console.log(JWT_SECRET)
     const username = req.body.username
     const password = req.body.password
 
@@ -120,35 +117,40 @@ export async function Login(req: Request, res: Response) {
 
 }
 
+function verifyToken(token: string, secret: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        jwt.verify(token, secret, (err, decoded) => {
+            if (err) reject(err);
+            else resolve(decoded);
+        });
+    });
+}
+
 export async function RefreshToken(req: Request, res: Response) {
-    const token = req.body.refresh
+    const token = req.body.refresh;
     if (!token) {
-        res.status(400).json({ message: "Invalid Refresh Token" })
-        return;
+        return res.status(400).json({ message: "Invalid Refresh Token" });
     }
 
-    jwt.verify(token, (JWT_SECRET as any), (err: any) => {
-        if (err) {
-            res.status(400).json({ message: "Invalid Refresh Token" })
-            return;
-        }
-    })
+    try {
+        await verifyToken(token, JWT_SECRET as any);
+    } catch (err) {
+        return res.status(400).json({ message: "Invalid Refresh Token" });
+    }
 
     const user = await prisma.auth_user.findFirst({
-        where: {
-            refreshToken: token
-        }
-    })
+        where: { refreshToken: token }
+    });
 
     if (!user) {
-        res.status(400).json({ message: "Invalid Refresh Token" })
-        return;
+        return res.status(400).json({ message: "Invalid Refresh Token" });
     }
 
     const access = jwt.sign(
         { email: user.email, username: user.username },
-        (JWT_SECRET as any),
+        JWT_SECRET as any,
         { expiresIn: JWT_EXP }
-    )
-    res.status(200).json({ access })
+    );
+
+    return res.status(200).json({ access });
 }

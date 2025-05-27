@@ -3,11 +3,18 @@ import AuthRouter from './Routes/Auth'
 import AppRouter from './Routes/App'
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { Request, Response, NextFunction } from "express";
 dotenv.config();
 
 
 const app = express()
 
+const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+};
+
+app.use(requestLogger)
 // JSON serialization
 app.use(express.json())
 
@@ -16,10 +23,10 @@ app.use(express.json())
 app.use(cors())
 
 //Auth Router
-app.use('/' , AuthRouter)
+app.use('/', AuthRouter)
 
 //App Router
-app.use('/' , AppRouter)
+app.use('/', AppRouter)
 
 
 
