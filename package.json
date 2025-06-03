@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch app/main.ts",
     "build": "tsup app/main.ts --format esm --dts",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "startpm2": "pm2 start dist/main.js --name my-express-app"
   },
   "type": "module",
   "keywords": [],
